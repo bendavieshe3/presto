@@ -1,0 +1,7 @@
+# Ignore all files in the .gitignore file
+
+# project specific
+concatenated.txt
+
+# ide
+*.code-workspace
