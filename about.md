@@ -38,7 +38,41 @@ Presto is intended to be progressively implemented as the problem domain is bett
    - Workflow chaining and context persistence
    - Structured input/output formatting
 
+# Project Structure
+The project follows standard Ruby gem conventions:
+
+```
+presto/
+├── gems/
+│   ├── presto-core/           # Core invocation library
+│   │   ├── lib/
+│   │   ├── spec/
+│   │   ├── Gemfile
+│   │   ├── README.md
+│   │   └── presto-core.gemspec
+│   ├── presto-framework/      # Advanced features framework
+│   ├── presto-config/         # Configuration management
+│   ├── presto-daemon/         # Service daemon
+│   └── presto-cli/            # Command line interface
+│       ├── exe/
+│       │   └── presto        # CLI executable
+│       └── [standard gem structure]
+├── docs/
+│   ├── api/
+│   └── guides/
+└── examples/
+```
+
+## Component Responsibilities
+
+1. **presto-core**: Stateless library for model invocation with standardized I/O parameters
+2. **presto-framework**: Advanced features including templating, workflows, and context management
+3. **presto-config**: Configuration management for system, user, project, and templates
+4. **presto-daemon**: HTTP endpoints and async operations via messaging/streaming
+5. **presto-cli**: Command-line interface mapping library capabilities to outcomes
+
 # Domain Characteristics
+
 1. **Modality**: AI models support a variety of modalities, including text, image, audio, and video
 2. **Provider**: AI models are provided by a variety of entities, including OpenRouter, Replicate, and other first and second party providers
 3. **Interface**: AI models are invoked through a variety of interfaces, including REST, GraphQL, and gRPC
