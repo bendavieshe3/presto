@@ -1,9 +1,10 @@
+# gems/presto-cli/lib/presto/cli.rb
 # frozen_string_literal: true
 
-require_relative "cli/version"
+require_relative 'cli/version'
 
 module Presto
-  module Cli
+  module CLI
     class Error < StandardError; end
     # Your code goes here...
   end

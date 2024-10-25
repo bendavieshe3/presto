@@ -1,10 +1,9 @@
-# frozen_string_literal: true
+source 'https://rubygems.org'
 
-source "https://rubygems.org"
+gem 'presto-core', path: '../../gems/presto-core'
 
-# Specify your gem's dependencies in presto-cli.gemspec
-gemspec
-
-gem "rake", "~> 13.0"
-
-gem "rspec", "~> 3.0"
+group :development do
+  gem 'rake', '~> 13.0'
+  gem 'rspec', '~> 3.12'
+  gem 'rubocop', '~> 1.50'
+end
