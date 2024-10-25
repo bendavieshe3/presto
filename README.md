@@ -5,7 +5,8 @@ Presto is a command line tool and Ruby library for invoking artificial intellige
 ## Features
 
 - Simple interface for text generation using AI models
-- Support for multiple AI providers (currently OpenRouter)
+- Support for OpenRouter's AI model providers
+- Command line interface with support for model selection and output formatting
 - Configurable through environment variables
 - Extensible architecture for adding new providers and capabilities
 
@@ -27,12 +28,57 @@ bundle install
 OPENROUTER_API_KEY=your-api-key-here
 ```
 
-## Quick Start
+## Usage
 
-Try the basic text generation example:
+### Command Line Interface
+
+The CLI provides several commands for interacting with AI models:
 
 ```bash
-./examples/basic/text_generation.rb
+# Generate text using an AI model
+presto generate "What is the meaning of life?"
+
+# Generate with specific model and format options
+presto generate -m gpt-4 -f json "Write a haiku about programming"
+
+# List available providers
+presto providers
+
+# List available models
+presto models
+
+# Show version information
+presto version
+```
+
+CLI Options:
+- `-m, --model`: Specify the model to use (default: gpt-3.5-turbo)
+- `-p, --provider`: Specify the provider to use (default: openrouter)
+- `-f, --format`: Output format (text, json) (default: text)
+- `-v, --verbose`: Show verbose output
+
+### As a Ruby Library
+
+```ruby
+require "bundler/setup"
+require "dotenv/load"
+require "presto/core"
+
+# Initialize client with OpenRouter
+client = Presto::Core::Client.new(
+  provider: :openrouter,
+  api_key: ENV["OPENROUTER_API_KEY"]
+)
+
+# Generate text
+response = client.generate_text(
+  "Hello, how are you?",
+  model: "gpt-3.5-turbo"  # optional, defaults to gpt-3.5-turbo
+)
+
+# Extract the response content
+content = response.dig("choices", 0, "message", "content")
+puts content
 ```
 
 ## Project Structure
@@ -55,33 +101,6 @@ presto/
 └── examples/                  # Usage examples
     └── basic/
         └── text_generation.rb
-```
-
-## Usage
-
-### As a Library
-
-```ruby
-require "bundler/setup"
-require "dotenv/load"
-require "presto/core"
-
-client = Presto::Core::Client.new(
-  provider: :openrouter,
-  api_key: ENV["OPENROUTER_API_KEY"]
-)
-
-response = client.generate_text("Hello, how are you?")
-content = response.dig("choices", 0, "message", "content")
-puts content
-```
-
-### Command Line (Coming Soon)
-
-The CLI interface is under development. Future versions will support commands like:
-
-```bash
-presto generate "What is the meaning of life?"
 ```
 
 ## Development
