@@ -105,11 +105,30 @@ presto/
 
 ## Development
 
-After checking out the repo, run `bundle install` to install dependencies.
+After checking out the repo, run:
+```bash
+# Install bundler if you haven't already
+gem install bundler
+
+# Install dependencies
+bundle install
+```
 
 To run the test suite:
 ```bash
 bundle exec rspec
+```
+
+### Running the CLI in Development
+
+You can run the Presto CLI in development using:
+```bash
+# From project root
+bundle exec presto
+
+# Or install it locally
+rake install
+presto
 ```
 
 ## Contributing

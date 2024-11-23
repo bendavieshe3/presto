@@ -1,7 +1,7 @@
 # Ignore all files in the .gitignore file
 
 # project specific
-*concatenated.txt
+crunch_output.txt
 
 # ide
 *.code-workspace
@@ -29,6 +29,7 @@
 /rdoc/
 
 # Gem specific
+Gemfile.lock
 /gems/*/Gemfile.lock
 /gems/*/.bundle/
 /gems/*/pkg/
