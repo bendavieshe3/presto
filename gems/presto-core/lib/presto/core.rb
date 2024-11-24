@@ -1,13 +1,14 @@
 # frozen_string_literal: true
+# FILE: gems/presto-core/lib/presto/core.rb
 
 require_relative "core/version"
+require_relative "core/errors"
+require_relative "core/providers/base"
+require_relative "core/providers/openrouter"
 require_relative "core/client"
-# require_relative "core/providers"
-# require_relative "core/models"
 
 module Presto
   module Core
     class Error < StandardError; end
-    # Your code goes here...
   end
 end

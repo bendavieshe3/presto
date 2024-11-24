@@ -1,32 +1,31 @@
-require "http"
-
+# frozen_string_literal: true
+# FILE: gems/presto-core/lib/presto/core/client.rb
 module Presto
   module Core
     class Client
-      attr_reader :provider, :api_key
+      attr_reader :provider
 
       def initialize(provider:, api_key:)
-        @provider = provider
-        @api_key = api_key
+        @provider = create_provider(provider, api_key)
       end
 
       def generate_text(prompt, model: "gpt-3.5-turbo", **options)
-        # Initial implementation will focus on OpenRouter
-        response = HTTP
-          .headers(accept: "application/json")
-          .auth("Bearer #{api_key}")
-          .post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            json: {
-              model: model,
-              messages: [{ role: "user", content: prompt }],
-              **options
-            }
-          )
+        provider.generate_text(prompt, model: model, **options)
+      end
 
-        JSON.parse(response.body.to_s)
-      rescue HTTP::Error => e
-        raise Error, "API request failed: #{e.message}"
+      def available_models
+        provider.available_models
+      end
+
+      private
+
+      def create_provider(provider_name, api_key)
+        case provider_name.to_sym
+        when :openrouter
+          Providers::OpenRouter.new(api_key: api_key)
+        else
+          raise ProviderError, "Unsupported provider: #{provider_name}"
+        end
       end
     end
   end
