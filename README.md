@@ -18,9 +18,9 @@ git clone https://github.com/yourusername/presto.git
 cd presto
 ```
 
-2. Install dependencies:
+2. Set up the development environment:
 ```bash
-bundle install
+rake setup
 ```
 
 3. Create a `.env` file in the project root with your API keys:
@@ -105,18 +105,21 @@ presto/
 
 ## Development
 
-After checking out the repo, run:
-```bash
-# Install bundler if you haven't already
-gem install bundler
+The project includes several rake tasks to help with development:
 
-# Install dependencies
-bundle install
-```
-
-To run the test suite:
 ```bash
-bundle exec rspec
+# Setup development environment
+rake setup              # Install dependencies for all gems
+rake gems:dev:update    # Update all gem dependencies
+
+# Building and Installing
+rake gems:build         # Build all gems in correct order
+rake gems:clean         # Clean all built gem packages
+rake install           # Build and install all gems (shortcut for gems:install)
+
+# Testing
+rake spec              # Run all specs (shortcut for gems:spec)
+rake gems:spec_doc     # Run all specs with documentation format
 ```
 
 ### Running the CLI in Development
@@ -124,10 +127,9 @@ bundle exec rspec
 You can run the Presto CLI in development using:
 ```bash
 # From project root
-bundle exec presto
+bundle exec gems/presto-cli/exe/presto
 
-# Or install it locally
-rake install
+# Or after installation
 presto
 ```
 
