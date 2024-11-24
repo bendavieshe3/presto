@@ -1,6 +1,8 @@
 # frozen_string_literal: true
-
-require "presto/core"
+# FILE: gems/presto-core/spec/spec_helper.rb
+require 'bundler/setup'
+require 'webmock/rspec'
+require 'presto/core'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
@@ -11,5 +13,10 @@ RSpec.configure do |config|
 
   config.expect_with :rspec do |c|
     c.syntax = :expect
+  end
+
+  # Clean up any WebMock stubs after each test
+  config.after(:each) do
+    WebMock.reset!
   end
 end
