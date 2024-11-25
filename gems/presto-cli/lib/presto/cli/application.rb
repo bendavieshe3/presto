@@ -40,11 +40,7 @@ module Presto
           say "Using model: #{options[:model]}"
         end
 
-        client = Presto::Core::Client.new(
-          provider: options[:provider].to_sym,
-          api_key: ENV['OPENROUTER_API_KEY']
-        )
-
+        client = create_client
         say 'Generating response...' if options[:verbose]
 
         begin
@@ -72,12 +68,6 @@ module Presto
         end
       end
 
-      desc 'providers', 'List available providers'
-      def providers
-        say 'Available providers:'
-        say '  - openrouter'
-      end
-
       desc 'models', 'List available models for a provider'
       method_option :provider,
                     aliases: '-p',
@@ -95,28 +85,27 @@ module Presto
       def models
         validate_environment!
         
-        client = Presto::Core::Client.new(
-          provider: options[:provider].to_sym,
-          api_key: ENV['OPENROUTER_API_KEY']
-        )
+        client = create_client
 
-        models = client.available_models
+        begin
+          models = client.available_models
 
-        case options[:format]
-        when 'json'
-          puts JSON.pretty_generate(models)
-        else
-          say "Available models for #{options[:provider]}:"
-          models.each do |model|
-            if options[:verbose]
-              display_verbose_model_info(model)
-            else
-              display_basic_model_info(model)
+          case options[:format]
+          when 'json'
+            puts JSON.pretty_generate(models)
+          else
+            say "Available models for #{options[:provider]}:"
+            models.each do |model|
+              if options[:verbose]
+                display_verbose_model_info(model)
+              else
+                display_basic_model_info(model)
+              end
             end
           end
+        rescue Presto::Core::Error => e
+          raise Thor::Error, "Error: #{e.message}"
         end
-      rescue Presto::Core::Error => e
-        raise Thor::Error, "Error: #{e.message}"
       end
 
 
@@ -152,9 +141,33 @@ module Presto
         say "" # Empty line for readability between models
       end
 
+      def create_client
+        Presto::Core::Client.new(
+          provider: options[:provider].to_sym,
+          api_key: Presto::CLI::Config.openrouter_api_key
+        )
+      rescue Presto::Core::ConfigurationError
+        message = <<~ERROR
+          OpenRouter API key is required but not found.
+
+          You can configure it using either option:
+
+          Option 1: Set the OPENROUTER_API_KEY environment variable:
+              export OPENROUTER_API_KEY=your-api-key
+
+          Option 2: Create a configuration file:
+              mkdir -p #{Presto::CLI::Config::CONFIG_DIR}
+              
+          Then create #{Presto::CLI::Config::CONFIG_FILE} with the following content:
+              openrouter:
+                api_key: your-api-key
+        ERROR
+        raise Thor::Error, message
+      end      
+
       def validate_environment!
         api_key = Presto::CLI::Config.openrouter_api_key
-        return if api_key
+        return if api_key && !api_key.empty?
 
         message = <<~ERROR
           OpenRouter API key is required but not found.
@@ -172,9 +185,10 @@ module Presto
                 api_key: your-api-key
         ERROR
         
-        # Using Thor::Error ensures clean error output without stack traces
         raise Thor::Error, message
       end
+
+
       def handle_error(response)
         message = if response.is_a?(Hash) && response['error']
           response['error']['message']
