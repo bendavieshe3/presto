@@ -7,14 +7,14 @@ Presto is a command line tool and Ruby library for invoking artificial intellige
 - Simple interface for text generation using AI models
 - Support for OpenRouter's AI model providers
 - Command line interface with support for model selection and output formatting
-- Configurable through environment variables
+- Configurable through environment variables or config file
 - Extensible architecture for adding new providers and capabilities
 
 ## Installation
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/presto.git
+git clone https://github.com/bendavieshe3/presto.git
 cd presto
 ```
 
@@ -23,10 +23,22 @@ cd presto
 rake setup
 ```
 
-3. Create a `.env` file in the project root with your API keys:
-```
-OPENROUTER_API_KEY=your-api-key-here
-```
+3. Configure your API key using one of two methods:
+
+   Option 1: Environment variable:
+   ```bash
+   export OPENROUTER_API_KEY=your-api-key
+   ```
+
+   Option 2: Configuration file:
+   ```bash
+   mkdir -p ~/.config/presto
+   ```
+   Create `~/.config/presto/config.yml` with:
+   ```yaml
+   openrouter:
+     api_key: your-api-key
+   ```
 
 ## Usage
 
@@ -44,15 +56,16 @@ presto generate -m gpt-4 -f json "Write a haiku about programming"
 # List available providers
 presto providers
 
-# List available models
+# List available models (add -v for detailed information)
 presto models
+presto models -v
 
 # Show version information
 presto version
 ```
 
 CLI Options:
-- `-m, --model`: Specify the model to use (default: gpt-3.5-turbo)
+- `-m, --model`: Specify the model to use (default: meta-llama/llama-3-8b-instruct)
 - `-p, --provider`: Specify the provider to use (default: openrouter)
 - `-f, --format`: Output format (text, json) (default: text)
 - `-v, --verbose`: Show verbose output
@@ -60,20 +73,18 @@ CLI Options:
 ### As a Ruby Library
 
 ```ruby
-require "bundler/setup"
-require "dotenv/load"
 require "presto/core"
 
 # Initialize client with OpenRouter
 client = Presto::Core::Client.new(
   provider: :openrouter,
-  api_key: ENV["OPENROUTER_API_KEY"]
+  api_key: "your-api-key"
 )
 
 # Generate text
 response = client.generate_text(
   "Hello, how are you?",
-  model: "gpt-3.5-turbo"  # optional, defaults to gpt-3.5-turbo
+  model: "meta-llama/llama-3-8b-instruct"  # optional
 )
 
 # Extract the response content
