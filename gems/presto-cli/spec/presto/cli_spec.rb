@@ -1,11 +1,8 @@
 # frozen_string_literal: true
+# FILE: gems/presto-cli/spec/presto/cli_spec.rb
 
-RSpec.describe Presto::Cli do
+RSpec.describe Presto::CLI do
   it "has a version number" do
-    expect(Presto::Cli::VERSION).not_to be nil
-  end
-
-  it "does something useful" do
-    expect(false).to eq(true)
+    expect(Presto::CLI::VERSION).not_to be nil
   end
 end
