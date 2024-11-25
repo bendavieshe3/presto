@@ -17,7 +17,7 @@ module Presto
       method_option :model,
                     aliases: '-m',
                     desc: 'Model to use',
-                    default: 'gpt-3.5-turbo'
+                    default: 'meta-llama/llama-3-8b-instruct'
       method_option :provider,
                     aliases: '-p',
                     desc: 'Provider to use',

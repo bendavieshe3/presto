@@ -9,7 +9,7 @@ module Presto
         @provider = create_provider(provider, api_key)
       end
 
-      def generate_text(prompt, model: "gpt-3.5-turbo", **options)
+      def generate_text(prompt, model: "meta-llama/llama-3-8b-instruct", **options)
         provider.generate_text(prompt, model: model, **options)
       end
 
