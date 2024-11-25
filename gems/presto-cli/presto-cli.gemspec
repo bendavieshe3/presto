@@ -19,7 +19,7 @@ Gem::Specification.new do |spec|
   spec.metadata['source_code_uri'] = spec.homepage
   spec.metadata['changelog_uri'] = spec.homepage
 
-  spec.files = Dir.glob('{exe,lib}/**/*')
+  spec.files = Dir.glob('{bin,exe,lib}/**/*') + %w[README.md]
   spec.bindir = 'exe'
   spec.executables = ['presto']
   spec.require_paths = ['lib']
@@ -28,6 +28,9 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'presto-core', '~> 0.1.0'
   spec.add_dependency 'thor', '~> 1.3'
 
+  spec.add_dependency 'stringio', '~> 3.1.0'
+
   spec.add_development_dependency 'rspec', '~> 3.12'
   spec.add_development_dependency 'rubocop', '~> 1.50'
+  spec.add_development_dependency 'stringio', '~> 3.1.0'
 end

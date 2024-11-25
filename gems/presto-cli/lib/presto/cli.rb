@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require_relative 'cli/version'
+require_relative 'cli/config'
 
 module Presto
   module CLI

@@ -153,11 +153,28 @@ module Presto
       end
 
       def validate_environment!
-        return if ENV['OPENROUTER_API_KEY']
+        api_key = Presto::CLI::Config.openrouter_api_key
+        return if api_key
 
-        raise Error, 'OPENROUTER_API_KEY environment variable is required'
+        message = <<~ERROR
+          OpenRouter API key is required but not found.
+
+          You can configure it using either option:
+
+          Option 1: Set the OPENROUTER_API_KEY environment variable:
+              export OPENROUTER_API_KEY=your-api-key
+
+          Option 2: Create a configuration file:
+              mkdir -p #{Presto::CLI::Config::CONFIG_DIR}
+              
+          Then create #{Presto::CLI::Config::CONFIG_FILE} with the following content:
+              openrouter:
+                api_key: your-api-key
+        ERROR
+        
+        # Using Thor::Error ensures clean error output without stack traces
+        raise Thor::Error, message
       end
-
       def handle_error(response)
         message = if response.is_a?(Hash) && response['error']
           response['error']['message']
