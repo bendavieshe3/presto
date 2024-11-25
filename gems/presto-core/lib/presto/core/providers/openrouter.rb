@@ -51,18 +51,36 @@ module Presto
           raise InvalidModelError, "Model '#{model}' is not available. Use 'presto models' to see available models."
         end
 
+
         def handle_response(response)
-          parsed_response = JSON.parse(response.body.to_s)
-          
-          if response.status.success?
-            block_given? ? yield(parsed_response) : parsed_response
-          else
-            error_message = parsed_response.dig("error", "message") || "Unknown error occurred"
-            raise ApiError, error_message
+            if response.status.success?
+              begin
+                parsed_response = JSON.parse(response.body.to_s)
+                block_given? ? yield(parsed_response) : parsed_response
+              rescue JSON::ParserError => e
+                raise ApiError, "Invalid success response format: #{e.message}"
+              end
+            else
+              # For error responses, try parsing JSON first but fall back to raw body if needed
+              begin
+                parsed_response = JSON.parse(response.body.to_s)
+                error_message = if parsed_response.is_a?(Hash)
+                  # Try simple error first, then nested message
+                  parsed_response['error']&.is_a?(String) ? parsed_response['error'] : 
+                    parsed_response.dig('error', 'message') || 
+                    parsed_response.to_s
+                else
+                  parsed_response.to_s
+                end
+              rescue JSON::ParserError
+                # If JSON parsing fails, use the raw response body
+                error_message = response.body.to_s
+              end
+              
+              raise ApiError, error_message
+            end
           end
-        rescue JSON::ParserError => e
-          raise ApiError, "Invalid response format: #{e.message}"
-        end
+
       end
     end
   end

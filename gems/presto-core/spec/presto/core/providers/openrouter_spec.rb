@@ -29,15 +29,57 @@ RSpec.describe Presto::Core::Providers::OpenRouter do
     end
 
     context 'when API request fails' do
-      before do
-        stub_request(:get, "#{described_class::API_BASE}/models")
-          .to_return(status: 500, body: '{"error": "Server error"}')
+        context 'with structured error response' do
+          before do
+            stub_request(:get, "#{described_class::API_BASE}/models")
+              .to_return(
+                status: 500,
+                body: { error: { message: 'Server error' } }.to_json
+              )
+          end
+      
+          it 'raises an ApiError with the error message' do
+            expect { provider.available_models }.to raise_error(
+              Presto::Core::ApiError,
+              'Server error'
+            )
+          end
+        end
+      
+        context 'with simple error response' do
+          before do
+            stub_request(:get, "#{described_class::API_BASE}/models")
+              .to_return(
+                status: 500,
+                body: { error: 'Simple error message' }.to_json
+              )
+          end
+      
+          it 'raises an ApiError with the error message' do
+            expect { provider.available_models }.to raise_error(
+              Presto::Core::ApiError,
+              'Simple error message'
+            )
+          end
+        end
+      
+        context 'with unparseable response' do
+          before do
+            stub_request(:get, "#{described_class::API_BASE}/models")
+              .to_return(
+                status: 500,
+                body: 'Internal Server Error'
+              )
+          end
+      
+          it 'raises an ApiError with the raw message' do
+            expect { provider.available_models }.to raise_error(
+              Presto::Core::ApiError,
+              'Internal Server Error'
+            )
+          end
+        end
       end
-
-      it 'raises an ApiError' do
-        expect { provider.available_models }.to raise_error(Presto::Core::ApiError)
-      end
-    end
   end
 
   describe '#generate_text' do
