@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "thor"
 require "presto/cli"
 
 RSpec.configure do |config|

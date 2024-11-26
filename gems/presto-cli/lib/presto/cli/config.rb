@@ -11,12 +11,41 @@ module Presto
 
       class << self
         def openrouter_api_key
-          # Check environment variable first
+          # Maintain backwards compatibility with env var
           return ENV['OPENROUTER_API_KEY'] if ENV['OPENROUTER_API_KEY']
 
-          # Then check config file
+          # Then check provider config
+          provider_config('openrouter')&.fetch('api_key', nil)
+        end
+
+        def provider_api_key(provider)
+          # Check environment variable first (e.g., OPENAI_API_KEY)
+          env_key = "#{provider.upcase}_API_KEY"
+          return ENV[env_key] if ENV[env_key]
+
+          # Then check provider config
+          provider_config(provider)&.fetch('api_key', nil)
+        end
+
+        def default_provider
+            config = load_config
+            # Changed from using fetch to handle nil config case explicitly
+            return 'openrouter' unless config
+            config['default_provider'] || 'openrouter'
+        end
+
+        def provider_config(provider)
           config = load_config
-          config&.dig('openrouter', 'api_key')
+          return nil unless config
+
+          config.dig('providers', provider.to_s)
+        end
+
+        def available_providers
+          config = load_config
+          return ['openrouter'] unless config&.key?('providers')
+
+          config['providers'].keys
         end
 
         private
@@ -30,13 +59,19 @@ module Presto
 
         def config_instructions
           instructions = []
-          instructions << "Option 1: Set the OPENROUTER_API_KEY environment variable:"
+          instructions << "Configuration can be provided via environment variables or config file."
+          instructions << "\nOption 1: Set environment variables:"
           instructions << "  export OPENROUTER_API_KEY=your-api-key"
+          instructions << "  export OPENAI_API_KEY=your-openai-key"
           instructions << "\nOption 2: Create a configuration file:"
           instructions << "  mkdir -p #{CONFIG_DIR}"
-          instructions << "  Then create #{CONFIG_FILE} with the following content:"
-          instructions << "\n  openrouter:"
-          instructions << "    api_key: your-api-key"
+          instructions << "  Create #{CONFIG_FILE} with the following content:"
+          instructions << "\n  default_provider: openrouter"
+          instructions << "  providers:"
+          instructions << "    openrouter:"
+          instructions << "      api_key: your-api-key"
+          instructions << "    openai:"
+          instructions << "      api_key: your-openai-key"
           instructions.join("\n")
         end
       end

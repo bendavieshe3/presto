@@ -23,6 +23,8 @@ module Presto
         case provider_name.to_sym
         when :openrouter
           Providers::OpenRouter.new(api_key: api_key)
+        when :openai
+          Providers::OpenAI.new(api_key: api_key)
         else
           raise ProviderError, "Unsupported provider: #{provider_name}"
         end

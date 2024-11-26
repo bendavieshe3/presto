@@ -1,4 +1,6 @@
-# gems/presto-cli/lib/presto/cli/application.rb
+# frozen_string_literal: true
+# FILE: gems/presto-cli/lib/presto/cli/application.rb
+
 require 'thor'
 require 'presto/core'
 require 'dotenv/load'
@@ -13,34 +15,36 @@ module Presto
         true
       end
 
+      class_option :provider,
+                  aliases: '-p',
+                  desc: 'Provider to use (defaults to config or openrouter)',
+                  type: :string
+      class_option :verbose,
+                  aliases: '-v',
+                  desc: 'Show verbose output',
+                  type: :boolean,
+                  default: false
+
       desc 'generate PROMPT', 'Generate text using an AI model'
       method_option :model,
-                    aliases: '-m',
-                    desc: 'Model to use',
-                    default: 'meta-llama/llama-3-8b-instruct'
-      method_option :provider,
-                    aliases: '-p',
-                    desc: 'Provider to use',
-                    default: 'openrouter'
+                   aliases: '-m',
+                   desc: 'Model to use',
+                   default: 'meta-llama/llama-3-8b-instruct'
       method_option :format,
-                    aliases: '-f',
-                    desc: 'Output format (text, json)',
-                    default: 'text'
-      method_option :verbose,
-                    aliases: '-v',
-                    desc: 'Show verbose output',
-                    type: :boolean,
-                    default: false
-
+                   aliases: '-f',
+                   desc: 'Output format (text, json)',
+                   default: 'text'
       def generate(prompt)
-        validate_environment!
+        provider_name = determine_provider
+        validate_provider!(provider_name)
+        validate_provider_config!(provider_name)
 
         if options[:verbose]
-          say "Using provider: #{options[:provider]}"
+          say "Using provider: #{provider_name}"
           say "Using model: #{options[:model]}"
         end
 
-        client = create_client
+        client = create_client(provider_name)
         say 'Generating response...' if options[:verbose]
 
         begin
@@ -69,23 +73,16 @@ module Presto
       end
 
       desc 'models', 'List available models for a provider'
-      method_option :provider,
-                    aliases: '-p',
-                    desc: 'Provider to list models for',
-                    default: 'openrouter'
       method_option :format,
-                    aliases: '-f',
-                    desc: 'Output format (text, json)',
-                    default: 'text'
-      method_option :verbose,
-                    aliases: '-v',
-                    desc: 'Show detailed model information',
-                    type: :boolean,
-                    default: false
+                   aliases: '-f',
+                   desc: 'Output format (text, json)',
+                   default: 'text'
       def models
-        validate_environment!
+        provider_name = determine_provider
+        validate_provider!(provider_name)
+        validate_provider_config!(provider_name)
         
-        client = create_client
+        client = create_client(provider_name)
 
         begin
           models = client.available_models
@@ -94,7 +91,7 @@ module Presto
           when 'json'
             puts JSON.pretty_generate(models)
           else
-            say "Available models for #{options[:provider]}:"
+            say "Available models for #{provider_name}:"
             models.each do |model|
               if options[:verbose]
                 display_verbose_model_info(model)
@@ -108,6 +105,37 @@ module Presto
         end
       end
 
+      desc 'providers', 'List available providers'
+      method_option :format,
+                   aliases: '-f',
+                   desc: 'Output format (text, json)',
+                   default: 'text'
+      def providers
+        providers = Config.available_providers
+        default = Config.default_provider
+
+        case options[:format]
+        when 'json'
+          data = {
+            providers: providers,
+            default_provider: default,
+            configured_providers: providers.select { |p| Config.provider_api_key(p) }
+          }
+          puts JSON.pretty_generate(data)
+        else
+          say "Available providers:"
+          providers.each do |provider|
+            status = if Config.provider_api_key(provider)
+              "configured"
+            else
+              "not configured"
+            end
+            provider_str = provider.to_s
+            provider_str += " (default)" if provider == default
+            say "  #{provider_str} - #{status}"
+          end
+        end
+      end
 
       desc 'version', 'Show version information'
       def version
@@ -117,8 +145,52 @@ module Presto
 
       private
 
+      def determine_provider
+        # Command line option takes precedence
+        return options[:provider] if options[:provider]
+        
+        # Then use configured default
+        Config.default_provider
+      end
+
+      def validate_provider!(provider_name)
+        unless Config.available_providers.include?(provider_name.to_s)
+          raise Thor::Error, "Error: Unknown provider '#{provider_name}'. Use 'presto providers' to see available providers."
+        end
+      end
+
+      def validate_provider_config!(provider_name)
+        unless Config.provider_api_key(provider_name)
+          message = <<~ERROR
+            Provider '#{provider_name}' is not configured.
+
+            You can configure it using either option:
+
+            Option 1: Set the #{provider_name.upcase}_API_KEY environment variable:
+                export #{provider_name.upcase}_API_KEY=your-api-key
+
+            Option 2: Add to your configuration file (#{Config::CONFIG_FILE}):
+                providers:
+                  #{provider_name}:
+                    api_key: your-api-key
+          ERROR
+          raise Thor::Error, message
+        end
+      end
+
+      def create_client(provider_name)
+        begin
+          Presto::Core::Client.new(
+            provider: provider_name.to_sym,
+            api_key: Config.provider_api_key(provider_name)
+          )
+        rescue Presto::Core::Error => e
+          raise Thor::Error, "Configuration error: #{e.message}"
+        end
+      end      
+
+
       def display_basic_model_info(model)
-        # Let the display logic handle missing fields gracefully
         id = model['id'] || model['model']
         name = model['name'] || id
         say "  - #{id}#{name != id ? " (#{name})" : ''}"
@@ -128,66 +200,16 @@ module Presto
         id = model['id'] || model['model']
         say "  #{id}:"
         
-        # Display any additional fields that exist
         %w[name description context_length].each do |field|
           say "    #{field}: #{model[field]}" if model[field]
         end
         
-        # Handle nested fields if they exist
         if model['pricing']&.dig('prompt')
           say "    pricing: $#{model['pricing']['prompt']}/1k tokens"
         end
         
         say "" # Empty line for readability between models
       end
-
-      def create_client
-        Presto::Core::Client.new(
-          provider: options[:provider].to_sym,
-          api_key: Presto::CLI::Config.openrouter_api_key
-        )
-      rescue Presto::Core::ConfigurationError
-        message = <<~ERROR
-          OpenRouter API key is required but not found.
-
-          You can configure it using either option:
-
-          Option 1: Set the OPENROUTER_API_KEY environment variable:
-              export OPENROUTER_API_KEY=your-api-key
-
-          Option 2: Create a configuration file:
-              mkdir -p #{Presto::CLI::Config::CONFIG_DIR}
-              
-          Then create #{Presto::CLI::Config::CONFIG_FILE} with the following content:
-              openrouter:
-                api_key: your-api-key
-        ERROR
-        raise Thor::Error, message
-      end      
-
-      def validate_environment!
-        api_key = Presto::CLI::Config.openrouter_api_key
-        return if api_key && !api_key.empty?
-
-        message = <<~ERROR
-          OpenRouter API key is required but not found.
-
-          You can configure it using either option:
-
-          Option 1: Set the OPENROUTER_API_KEY environment variable:
-              export OPENROUTER_API_KEY=your-api-key
-
-          Option 2: Create a configuration file:
-              mkdir -p #{Presto::CLI::Config::CONFIG_DIR}
-              
-          Then create #{Presto::CLI::Config::CONFIG_FILE} with the following content:
-              openrouter:
-                api_key: your-api-key
-        ERROR
-        
-        raise Thor::Error, message
-      end
-
 
       def handle_error(response)
         message = if response.is_a?(Hash) && response['error']
@@ -198,7 +220,5 @@ module Presto
         raise Thor::Error, "Error: #{message}"
       end
     end
-
-    class Error < StandardError; end
   end
 end

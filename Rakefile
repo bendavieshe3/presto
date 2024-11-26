@@ -45,6 +45,9 @@ namespace :gems do
     GEMS.each do |gem|
       puts "\n=== Running specs for #{gem} ==="
       Dir.chdir("gems/#{gem}") do
+        # Install dependencies before running specs
+        sh 'bundle install'
+        # Run the specs using bundle exec to ensure correct dependency resolution
         sh 'bundle exec rspec'
       end
     end
@@ -55,6 +58,7 @@ namespace :gems do
     GEMS.each do |gem|
       puts "\n=== Running documented specs for #{gem} ==="
       Dir.chdir("gems/#{gem}") do
+        sh 'bundle install'
         sh 'bundle exec rspec --format documentation'
       end
     end
