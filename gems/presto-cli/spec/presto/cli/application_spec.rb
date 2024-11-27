@@ -110,6 +110,27 @@ RSpec.describe Presto::CLI::Application do
         }.to raise_error(Thor::Error, /Provider .* is not configured/)
       end
     end
+
+    context 'when no model is specified' do
+        before do
+          ENV['OPENAI_API_KEY'] = 'test_key'
+          allow_any_instance_of(Presto::Core::Providers::OpenAI)
+            .to receive(:default_model)
+            .and_return('gpt-3.5-turbo')
+          allow_any_instance_of(Presto::Core::Providers::OpenAI)
+            .to receive(:generate_text)
+            .and_return(model_response)
+        end
+    
+        it 'uses the provider default model' do
+          expect_any_instance_of(Presto::Core::Providers::OpenAI)
+            .to receive(:generate_text)
+            .with('test prompt', model: 'gpt-3.5-turbo')
+            
+          app.invoke(:generate, ['test prompt'], provider: 'openai')
+        end
+    end
+
   end
 
   describe '#models command' do

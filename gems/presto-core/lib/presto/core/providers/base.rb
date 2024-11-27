@@ -31,6 +31,10 @@ module Presto
             raise NotImplementedError, "#{self.class} must implement #validate_model"
           end
   
+          def default_model
+            raise NotImplementedError, "#{self.class} must implement #default_model"
+          end
+
           private
   
           def validate_configuration

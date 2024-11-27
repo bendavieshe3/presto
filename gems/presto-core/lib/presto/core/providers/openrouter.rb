@@ -42,6 +42,10 @@ module Presto
           raise ApiError, "API request failed: #{e.message}"
         end
 
+        def default_model
+            "meta-llama/llama-3-8b-instruct"
+        end
+
         private
 
         def validate_model(model)
@@ -50,7 +54,6 @@ module Presto
           
           raise InvalidModelError, "Model '#{model}' is not available. Use 'presto models' to see available models."
         end
-
 
         def handle_response(response)
             if response.status.success?

@@ -67,6 +67,10 @@ module Presto
           raise ApiError, "API request failed: #{e.message}"
         end
 
+        def default_model
+            "gpt-3.5-turbo"
+        end
+
         private
 
         def validate_model(model)

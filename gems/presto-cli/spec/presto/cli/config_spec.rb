@@ -104,9 +104,9 @@ RSpec.describe Presto::CLI::Config do
     end
 
     context 'when config file does not exist' do
-      it 'returns array with only openrouter' do
-        expect(described_class.available_providers).to contain_exactly('openrouter')
-      end
+        it 'returns array with default providers' do
+            expect(described_class.available_providers).to contain_exactly('openrouter', 'openai')
+        end
     end
   end
 end

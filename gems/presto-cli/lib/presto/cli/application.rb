@@ -26,10 +26,11 @@ module Presto
                   default: false
 
       desc 'generate PROMPT', 'Generate text using an AI model'
+# In lib/presto/cli/application.rb
       method_option :model,
-                   aliases: '-m',
-                   desc: 'Model to use',
-                   default: 'meta-llama/llama-3-8b-instruct'
+                  aliases: '-m',
+                  desc: 'Model to use (defaults to provider default)',
+                  type: :string
       method_option :format,
                    aliases: '-f',
                    desc: 'Output format (text, json)',
@@ -48,9 +49,12 @@ module Presto
         say 'Generating response...' if options[:verbose]
 
         begin
+          # Get the default model from the provider if none specified
+          model = options[:model] || client.provider.default_model
+          
           response = client.generate_text(
             prompt,
-            model: options[:model]
+            model: model
           )
 
           if response['choices'] && !response['choices'].empty?

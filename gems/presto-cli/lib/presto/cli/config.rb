@@ -42,10 +42,9 @@ module Presto
         end
 
         def available_providers
-          config = load_config
-          return ['openrouter'] unless config&.key?('providers')
-
-          config['providers'].keys
+            # Since we now support both providers by default, return both
+            # even if config file doesn't exist or doesn't list them
+            ['openrouter', 'openai']
         end
 
         private
