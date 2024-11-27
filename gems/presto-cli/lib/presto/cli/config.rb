@@ -31,8 +31,9 @@ module Presto
         end
 
         def available_providers
-          ['openrouter', 'openai']
+            Presto::Core::Client.available_providers
         end
+  
 
         def reload_config!
           @config = nil

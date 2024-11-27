@@ -150,20 +150,13 @@ RSpec.describe Presto::CLI::Config do
   end
 
   describe '.available_providers' do
-    context 'when config file exists with providers' do
-      before do
-        File.write(config_file, sample_config.to_yaml)
-      end
-
-      it 'returns array of configured providers' do
-        expect(described_class.available_providers).to contain_exactly('openrouter', 'openai')
-      end
+    it 'delegates to Core::Client.available_providers' do
+      providers = described_class.available_providers
+      expect(providers).to eq(Presto::Core::Client.available_providers)
     end
 
-    context 'when config file does not exist' do
-      it 'returns array with default providers' do
-        expect(described_class.available_providers).to contain_exactly('openrouter', 'openai')
-      end
+    it 'returns array with expected providers' do
+      expect(described_class.available_providers).to include('openrouter', 'openai')
     end
   end
 end
