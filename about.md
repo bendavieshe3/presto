@@ -142,14 +142,22 @@ presto/
 Specific dimensions of implementation to ensure consistency of delivery.
 
 ## Providers
+- OpenRouter
+- OpenAI
+
 (Add specific providers as implemented)
 
 ## Models
 (Add Specific coverage of models as implemented)
 
 ## Modality
+
+- LLM / Txt2Text
 (Add specific coverage of modalities as implemented)
 
 ## CLI Commands
 (Add specific CLI commands as implemented that need to be supported going forward)
 
+- generate
+- models
+- providers

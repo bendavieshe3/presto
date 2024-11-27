@@ -26,7 +26,6 @@ module Presto
                   default: false
 
       desc 'generate PROMPT', 'Generate text using an AI model'
-# In lib/presto/cli/application.rb
       method_option :model,
                   aliases: '-m',
                   desc: 'Model to use (defaults to provider default)',
@@ -35,23 +34,32 @@ module Presto
                    aliases: '-f',
                    desc: 'Output format (text, json)',
                    default: 'text'
+                   desc 'generate PROMPT', 'Generate text using an AI model'
+                   method_option :model,
+                               aliases: '-m',
+                               desc: 'Model to use (defaults to provider default)',
+                               type: :string
+                   method_option :format,
+                                aliases: '-f',
+                                desc: 'Output format (text, json)',
+                                default: 'text'
       def generate(prompt)
         provider_name = determine_provider
         validate_provider!(provider_name)
         validate_provider_config!(provider_name)
 
+        client = create_client(provider_name)
+        
+        # Get the default model from the provider if none specified - moved up
+        model = options[:model] || client.provider.default_model
+
         if options[:verbose]
           say "Using provider: #{provider_name}"
-          say "Using model: #{options[:model]}"
+          say "Using model: #{model}"
+          say 'Generating response...'
         end
 
-        client = create_client(provider_name)
-        say 'Generating response...' if options[:verbose]
-
         begin
-          # Get the default model from the provider if none specified
-          model = options[:model] || client.provider.default_model
-          
           response = client.generate_text(
             prompt,
             model: model

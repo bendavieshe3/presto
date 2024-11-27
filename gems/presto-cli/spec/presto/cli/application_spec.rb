@@ -131,6 +131,58 @@ RSpec.describe Presto::CLI::Application do
         end
     end
 
+    context 'with verbose output' do
+        before do
+          ENV['OPENAI_API_KEY'] = 'test_key'
+          allow_any_instance_of(Presto::Core::Providers::OpenAI)
+            .to receive(:generate_text)
+            .and_return(model_response)
+        end
+  
+        it 'displays default model name when no model specified' do
+          default_model = 'gpt-3.5-turbo'
+          allow_any_instance_of(Presto::Core::Providers::OpenAI)
+            .to receive(:default_model)
+            .and_return(default_model)
+  
+          output = capture_output { 
+            app.invoke(:generate, ['test prompt'], verbose: true, provider: 'openai') 
+          }
+          
+          expect(output).to include("Using provider: openai")
+          expect(output).to include("Using model: #{default_model}")
+        end
+  
+        it 'displays specified model name when model provided' do
+          specified_model = 'gpt-4'
+          
+          output = capture_output { 
+            app.invoke(:generate, ['test prompt'], 
+              verbose: true, 
+              provider: 'openai', 
+              model: specified_model) 
+          }
+          
+          expect(output).to include("Using provider: openai")
+          expect(output).to include("Using model: #{specified_model}")
+        end
+  
+        it 'shows the generating message after model info' do
+          output = capture_output { 
+            app.invoke(:generate, ['test prompt'], verbose: true, provider: 'openai') 
+          }
+          
+          # Convert output to lines and check order
+          lines = output.split("\n")
+          provider_line_index = lines.index { |line| line.include?("Using provider:") }
+          model_line_index = lines.index { |line| line.include?("Using model:") }
+          generating_line_index = lines.index { |line| line.include?("Generating response...") }
+          
+          expect(provider_line_index).to be < model_line_index
+          expect(model_line_index).to be < generating_line_index
+        end
+    end
+
   end
 
   describe '#models command' do
