@@ -5,10 +5,12 @@ Presto is a command line tool and Ruby library for invoking artificial intellige
 ## Features
 
 - Simple interface for text generation using AI models
-- Support for OpenRouter's AI model providers
-- Command line interface with support for model selection and output formatting
+- Support for multiple AI providers (OpenRouter, OpenAI)
+- Command line interface with model selection and output formatting
 - Configurable through environment variables or config file
-- Extensible architecture for adding new providers and capabilities
+- Standardized response format across providers
+- Detailed model information and availability checking
+- Extensible architecture for adding new providers
 
 ## Installation
 
@@ -23,22 +25,38 @@ cd presto
 rake setup
 ```
 
-3. Configure your API key using one of two methods:
+## Configuration
 
-   Option 1: Environment variable:
-   ```bash
-   export OPENROUTER_API_KEY=your-api-key
-   ```
+Configure your API keys using one of two methods:
 
-   Option 2: Configuration file:
-   ```bash
-   mkdir -p ~/.config/presto
-   ```
-   Create `~/.config/presto/config.yml` with:
-   ```yaml
-   openrouter:
-     api_key: your-api-key
-   ```
+### Option 1: Environment Variables
+
+```bash
+# For OpenRouter
+export OPENROUTER_API_KEY=your-openrouter-api-key
+
+# For OpenAI
+export OPENAI_API_KEY=your-openai-api-key
+```
+
+### Option 2: Configuration File
+
+Create the config directory:
+```bash
+mkdir -p ~/.config/presto
+```
+
+Create `~/.config/presto/config.yml` with:
+```yaml
+# Optional: Set default provider (defaults to openrouter if not specified)
+default_provider: openrouter
+
+providers:
+  openrouter:
+    api_key: your-openrouter-api-key
+  openai:
+    api_key: your-openai-api-key
+```
 
 ## Usage
 
@@ -47,27 +65,31 @@ rake setup
 The CLI provides several commands for interacting with AI models:
 
 ```bash
-# Generate text using an AI model
+# Generate text using default provider and model
 presto generate "What is the meaning of life?"
 
-# Generate with specific model and format options
-presto generate -m gpt-4 -f json "Write a haiku about programming"
+# Generate with specific provider and model
+presto generate -p openai -m gpt-3.5-turbo "Write a haiku about programming"
 
-# List available providers
-presto providers
+# Generate with JSON output format
+presto generate -f json "Tell me a joke"
 
 # List available models (add -v for detailed information)
 presto models
+presto models -p openai
 presto models -v
+
+# List available providers
+presto providers
 
 # Show version information
 presto version
 ```
 
 CLI Options:
-- `-m, --model`: Specify the model to use (default: meta-llama/llama-3-8b-instruct)
-- `-p, --provider`: Specify the provider to use (default: openrouter)
-- `-f, --format`: Output format (text, json) (default: text)
+- `-p, --provider`: Specify the provider to use (openrouter, openai)
+- `-m, --model`: Specify the model to use (defaults to provider's default)
+- `-f, --format`: Output format (text, json)
 - `-v, --verbose`: Show verbose output
 
 ### As a Ruby Library
@@ -75,19 +97,33 @@ CLI Options:
 ```ruby
 require "presto/core"
 
-# Initialize client with OpenRouter
+# Initialize client with OpenRouter (default provider)
 client = Presto::Core::Client.new(
   provider: :openrouter,
-  api_key: "your-api-key"
+  api_key: ENV["OPENROUTER_API_KEY"]
 )
 
-# Generate text
-response = client.generate_text(
-  "Hello, how are you?",
-  model: "meta-llama/llama-3-8b-instruct"  # optional
+# List available models
+models = client.available_models
+models.each do |model|
+  puts "- #{model['id']}"
+end
+
+# Generate text using default model
+response = client.generate_text("Hello, how are you?")
+content = response.dig("choices", 0, "message", "content")
+puts content
+
+# Use OpenAI provider with specific model
+openai_client = Presto::Core::Client.new(
+  provider: :openai,
+  api_key: ENV["OPENAI_API_KEY"]
 )
 
-# Extract the response content
+response = openai_client.generate_text(
+  "What is Ruby?",
+  model: "gpt-3.5-turbo"
+)
 content = response.dig("choices", 0, "message", "content")
 puts content
 ```
@@ -99,19 +135,20 @@ presto/
 ├── gems/
 │   ├── presto-core/           # Core invocation library
 │   │   ├── lib/
-│   │   ├── spec/
-│   │   └── presto-core.gemspec
+│   │   │   └── presto/
+│   │   │       └── core/
+│   │   │           └── providers/
+│   │   │               ├── base.rb
+│   │   │               ├── openai.rb
+│   │   │               └── openrouter.rb
+│   │   └── spec/
 │   └── presto-cli/            # Command line interface
 │       ├── exe/
 │       ├── lib/
-│       ├── spec/
-│       └── presto-cli.gemspec
-├── docs/                      # Documentation
-│   ├── api/
-│   └── guides/
-└── examples/                  # Usage examples
-    └── basic/
-        └── text_generation.rb
+│       └── spec/
+├── examples/                  # Usage examples
+│   └── basic/
+│       └── text_generation.rb
 ```
 
 ## Development
@@ -121,16 +158,14 @@ The project includes several rake tasks to help with development:
 ```bash
 # Setup development environment
 rake setup              # Install dependencies for all gems
-rake gems:dev:update    # Update all gem dependencies
 
 # Building and Installing
 rake gems:build         # Build all gems in correct order
-rake gems:clean         # Clean all built gem packages
-rake install           # Build and install all gems (shortcut for gems:install)
+rake install           # Build and install all gems
 
 # Testing
-rake spec              # Run all specs (shortcut for gems:spec)
-rake gems:spec_doc     # Run all specs with documentation format
+rake spec              # Run all specs
+rake gems:spec_doc     # Run specs with documentation format
 ```
 
 ### Running the CLI in Development
