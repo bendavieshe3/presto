@@ -6,9 +6,10 @@ require 'fileutils'
 module Presto
   module CLI
     class Config
-      CONFIG_DIR = File.expand_path('~/.config/presto')
-      CONFIG_FILE = File.join(CONFIG_DIR, 'config.yml')
-      DEFAULT_PROVIDER = 'openrouter'
+        ENV_CONFIG_PATH = 'PRESTO_CONFIG_PATH'
+        CONFIG_DIR = ENV.fetch(ENV_CONFIG_PATH) { File.expand_path('~/.config/presto') }
+        CONFIG_FILE = File.join(CONFIG_DIR, 'config.yml')
+        DEFAULT_PROVIDER = 'openrouter'
 
       class << self
         def openrouter_api_key
