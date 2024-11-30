@@ -108,7 +108,9 @@ RSpec.describe Presto::Core::Providers::OpenAI do
     before do
       # Stub the model validation
       allow(provider).to receive(:validate_model).and_return(true)
-      
+    end
+
+    it 'generates text using the specified model' do
       stub_request(:post, "#{described_class::API_BASE}/chat/completions")
         .with(
           headers: { 'Authorization' => "Bearer #{api_key}" },
@@ -118,15 +120,23 @@ RSpec.describe Presto::Core::Providers::OpenAI do
           })
         )
         .to_return(status: 200, body: openai_response)
-    end
 
-    it 'generates text using the specified model' do
       response = provider.generate_text(prompt, model: model)
       expect(response['choices'].first['message']['content']).to eq('Response text')
       expect(response['usage']).to include('prompt_tokens', 'completion_tokens')
     end
 
     it 'maintains consistent response structure' do
+      stub_request(:post, "#{described_class::API_BASE}/chat/completions")
+        .with(
+          headers: { 'Authorization' => "Bearer #{api_key}" },
+          body: hash_including({
+            model: model,
+            messages: [{ role: 'user', content: prompt }]
+          })
+        )
+        .to_return(status: 200, body: openai_response)
+
       response = provider.generate_text(prompt, model: model)
       expect(response).to match(
         'choices' => [
@@ -143,13 +153,16 @@ RSpec.describe Presto::Core::Providers::OpenAI do
       )
     end
 
-    context 'with additional options' do
-      it 'sanitizes and maps options correctly' do
+    context 'with valid parameters' do
+      it 'correctly includes supported parameters in the request' do
         stub = stub_request(:post, "#{described_class::API_BASE}/chat/completions")
           .with(
             body: hash_including({
               temperature: 0.7,
-              max_tokens: 100
+              max_tokens: 100,
+              top_p: 0.9,
+              presence_penalty: 0.5,
+              frequency_penalty: 0.5
             })
           )
           .to_return(status: 200, body: openai_response)
@@ -159,7 +172,9 @@ RSpec.describe Presto::Core::Providers::OpenAI do
           model: model,
           temperature: 0.7,
           max_tokens: 100,
-          unsupported_option: 'ignored'
+          top_p: 0.9,
+          presence_penalty: 0.5,
+          frequency_penalty: 0.5
         )
 
         expect(stub).to have_been_requested

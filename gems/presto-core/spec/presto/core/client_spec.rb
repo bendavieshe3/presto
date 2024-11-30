@@ -3,7 +3,16 @@ require 'spec_helper'
 
 RSpec.describe Presto::Core::Client do
   let(:api_key) { 'test_key' }
-  
+
+  describe '.available_providers' do
+    it 'returns array of supported provider names as strings' do
+      providers = described_class.available_providers
+      expect(providers).to be_an(Array)
+      expect(providers).to include('openrouter', 'openai')
+      expect(providers.all? { |p| p.is_a?(String) }).to be true
+    end
+  end
+
   describe '#initialize' do
     it 'creates an OpenRouter provider when specified' do
       client = described_class.new(provider: :openrouter, api_key: api_key)
@@ -13,7 +22,7 @@ RSpec.describe Presto::Core::Client do
     it 'raises error for unsupported providers' do
       expect {
         described_class.new(provider: :unsupported, api_key: api_key)
-      }.to raise_error(Presto::Core::ProviderError)
+      }.to raise_error(Presto::Core::ProviderError, "Unsupported provider: unsupported")
     end
   end
 

@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# FILE: gems/presto-core/spec/presto/core/providers/openrouter_spec.rb
+# FILE: spec/presto/core/providers/openrouter_spec.rb
 require 'spec_helper'
 
 RSpec.describe Presto::Core::Providers::OpenRouter do
@@ -29,57 +29,57 @@ RSpec.describe Presto::Core::Providers::OpenRouter do
     end
 
     context 'when API request fails' do
-        context 'with structured error response' do
-          before do
-            stub_request(:get, "#{described_class::API_BASE}/models")
-              .to_return(
-                status: 500,
-                body: { error: { message: 'Server error' } }.to_json
-              )
-          end
-      
-          it 'raises an ApiError with the error message' do
-            expect { provider.available_models }.to raise_error(
-              Presto::Core::ApiError,
-              'Server error'
+      context 'with structured error response' do
+        before do
+          stub_request(:get, "#{described_class::API_BASE}/models")
+            .to_return(
+              status: 500,
+              body: { error: { message: 'Server error' } }.to_json
             )
-          end
         end
-      
-        context 'with simple error response' do
-          before do
-            stub_request(:get, "#{described_class::API_BASE}/models")
-              .to_return(
-                status: 500,
-                body: { error: 'Simple error message' }.to_json
-              )
-          end
-      
-          it 'raises an ApiError with the error message' do
-            expect { provider.available_models }.to raise_error(
-              Presto::Core::ApiError,
-              'Simple error message'
-            )
-          end
-        end
-      
-        context 'with unparseable response' do
-          before do
-            stub_request(:get, "#{described_class::API_BASE}/models")
-              .to_return(
-                status: 500,
-                body: 'Internal Server Error'
-              )
-          end
-      
-          it 'raises an ApiError with the raw message' do
-            expect { provider.available_models }.to raise_error(
-              Presto::Core::ApiError,
-              'Internal Server Error'
-            )
-          end
+    
+        it 'raises an ApiError with the error message' do
+          expect { provider.available_models }.to raise_error(
+            Presto::Core::ApiError,
+            'Server error'
+          )
         end
       end
+    
+      context 'with simple error response' do
+        before do
+          stub_request(:get, "#{described_class::API_BASE}/models")
+            .to_return(
+              status: 500,
+              body: { error: 'Simple error message' }.to_json
+            )
+        end
+    
+        it 'raises an ApiError with the error message' do
+          expect { provider.available_models }.to raise_error(
+            Presto::Core::ApiError,
+            'Simple error message'
+          )
+        end
+      end
+    
+      context 'with unparseable response' do
+        before do
+          stub_request(:get, "#{described_class::API_BASE}/models")
+            .to_return(
+              status: 500,
+              body: 'Internal Server Error'
+            )
+        end
+    
+        it 'raises an ApiError with the raw message' do
+          expect { provider.available_models }.to raise_error(
+            Presto::Core::ApiError,
+            'Internal Server Error'
+          )
+        end
+      end
+    end
   end
 
   describe '#generate_text' do
@@ -96,8 +96,10 @@ RSpec.describe Presto::Core::Providers::OpenRouter do
     before do
       # Stub the model validation
       allow(provider).to receive(:validate_model).and_return(true)
-      
-      stub_request(:post, "#{described_class::API_BASE}/chat/completions")
+    end
+
+    it 'generates text using the specified model' do
+      stub = stub_request(:post, "#{described_class::API_BASE}/chat/completions")
         .with(
           headers: { 'Authorization' => "Bearer #{api_key}" },
           body: hash_including({
@@ -106,11 +108,36 @@ RSpec.describe Presto::Core::Providers::OpenRouter do
           })
         )
         .to_return(status: 200, body: success_response)
-    end
 
-    it 'generates text using the specified model' do
       response = provider.generate_text(prompt, model: model)
       expect(response).to include('choices')
+      expect(stub).to have_been_requested
+    end
+
+    context 'with valid parameters' do
+      it 'correctly includes supported parameters in the request' do
+        stub = stub_request(:post, "#{described_class::API_BASE}/chat/completions")
+          .with(
+            body: hash_including({
+              temperature: 0.7,
+              max_tokens: 100,
+              top_p: 0.9,
+              stop: '\n'
+            })
+          )
+          .to_return(status: 200, body: success_response)
+
+        provider.generate_text(
+          prompt,
+          model: model,
+          temperature: 0.7,
+          max_tokens: 100,
+          top_p: 0.9,
+          stop: '\n'
+        )
+
+        expect(stub).to have_been_requested
+      end
     end
 
     context 'when model validation fails' do
