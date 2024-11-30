@@ -37,6 +37,9 @@ export OPENROUTER_API_KEY=your-openrouter-api-key
 
 # For OpenAI
 export OPENAI_API_KEY=your-openai-api-key
+
+# For Anthropic
+export ANTHROPIC_API_KEY=your-anthropic-api-key
 ```
 
 ### Option 2: Configuration File
@@ -56,6 +59,8 @@ providers:
     api_key: your-openrouter-api-key
   openai:
     api_key: your-openai-api-key
+  anthropic:
+    api_key: your-anthropic-api-key
 ```
 
 ## Usage
@@ -70,6 +75,7 @@ presto generate "What is the meaning of life?"
 
 # Generate with specific provider and model
 presto generate -p openai -m gpt-3.5-turbo "Write a haiku about programming"
+presto generate -p anthropic -m claude-3-5-sonnet-20241022 "Tell me a joke"
 
 # Generate with JSON output format
 presto generate -f json "Tell me a joke"
@@ -103,29 +109,24 @@ client = Presto::Core::Client.new(
   api_key: ENV["OPENROUTER_API_KEY"]
 )
 
+# Use Anthropic provider with specific model
+anthropic_client = Presto::Core::Client.new(
+  provider: :anthropic,
+  api_key: ENV["ANTHROPIC_API_KEY"]
+)
+
+response = anthropic_client.generate_text(
+  "What is Ruby?",
+  model: "claude-3-5-sonnet-20241022"
+)
+content = response.dig("choices", 0, "message", "content")
+puts content
+
 # List available models
 models = client.available_models
 models.each do |model|
   puts "- #{model['id']}"
 end
-
-# Generate text using default model
-response = client.generate_text("Hello, how are you?")
-content = response.dig("choices", 0, "message", "content")
-puts content
-
-# Use OpenAI provider with specific model
-openai_client = Presto::Core::Client.new(
-  provider: :openai,
-  api_key: ENV["OPENAI_API_KEY"]
-)
-
-response = openai_client.generate_text(
-  "What is Ruby?",
-  model: "gpt-3.5-turbo"
-)
-content = response.dig("choices", 0, "message", "content")
-puts content
 ```
 
 ## Project Structure

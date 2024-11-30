@@ -6,6 +6,7 @@ require_relative "core/errors"
 require_relative "core/providers/base"
 require_relative "core/providers/openrouter"
 require_relative "core/providers/openai"
+require_relative "core/providers/anthropic"
 require_relative "core/parameters/definition"
 require_relative "core/client"
 

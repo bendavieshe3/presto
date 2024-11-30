@@ -3,7 +3,7 @@
 module Presto
   module Core
     class Client
-      AVAILABLE_PROVIDERS = [:openrouter, :openai].freeze
+      AVAILABLE_PROVIDERS = [:openrouter, :openai, :anthropic].freeze
 
       attr_reader :provider
 
@@ -34,6 +34,8 @@ module Presto
           Providers::OpenRouter.new(api_key: api_key)
         when :openai
           Providers::OpenAI.new(api_key: api_key)
+        when :anthropic
+          Providers::Anthropic.new(api_key: api_key)
         end
       end
     end
