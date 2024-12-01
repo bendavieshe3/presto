@@ -6,41 +6,20 @@ require 'json'
 module Presto
   module Core
     module Providers
-      class OpenRouter < Base
+      class OpenRouter < TextProvider
         API_BASE = "https://openrouter.ai/api/v1".freeze
 
         def available_parameters(model: nil)
-          {
-            temperature: Parameters::Definition.new(
-              name: :temperature,
-              type: :float,
-              description: "Controls randomness in the output",
-              default: 0.7,
-              constraints: { min: 0.0, max: 2.0 }
-            ),
-            max_tokens: Parameters::Definition.new(
-              name: :max_tokens,
-              type: :integer,
-              description: "Maximum number of tokens to generate",
-              default: 1000,
-              constraints: { min: 1, max: 4096 }
-            ),
-            top_p: Parameters::Definition.new(
-              name: :top_p,
-              type: :float,
-              description: "Controls diversity via nucleus sampling",
-              default: 1.0,
-              constraints: { min: 0.0, max: 1.0 }
-            ),
-            stop: Parameters::Definition.new(
-              name: :stop,
-              type: :string,
-              description: "Sequence where generation should stop",
-              default: nil
+            super.merge(
+              stop: Parameters::Definition.new(
+                name: :stop,
+                type: :string,
+                description: "Sequence where generation should stop",
+                default: nil
+              )
             )
-          }
         end
-
+        
         def available_models
           response = HTTP
             .headers(accept: "application/json")

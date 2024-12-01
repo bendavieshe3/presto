@@ -6,35 +6,22 @@ require 'json'
 module Presto
   module Core
     module Providers
-      class Anthropic < Base
+      class Anthropic < TextProvider
         API_BASE = "https://api.anthropic.com/v1".freeze
         API_VERSION = "2023-06-01".freeze
 
         def available_parameters(model: nil)
-          {
-            temperature: Parameters::Definition.new(
+            params = super
+            # Override temperature constraints for Anthropic
+            params[:temperature] = Parameters::Definition.new(
               name: :temperature,
               type: :float,
               description: "Controls randomness in the output",
               default: 0.7,
-              constraints: { min: 0.0, max: 1.0 }
-            ),
-            max_tokens: Parameters::Definition.new(
-              name: :max_tokens,
-              type: :integer,
-              description: "Maximum number of tokens to generate",
-              default: 1024,
-              constraints: { min: 1, max: 4096 }
-            ),
-            top_p: Parameters::Definition.new(
-              name: :top_p,
-              type: :float,
-              description: "Controls diversity via nucleus sampling",
-              default: 1.0,
-              constraints: { min: 0.0, max: 1.0 }
+              constraints: { min: 0.0, max: 1.0 }  # Anthropic's specific range
             )
-          }
-        end
+            params
+          end
 
         def available_models
           # Return current Claude models

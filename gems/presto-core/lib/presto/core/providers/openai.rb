@@ -6,49 +6,28 @@ require 'json'
 module Presto
   module Core
     module Providers
-      class OpenAI < Base
+      class OpenAI < TextProvider
         API_BASE = "https://api.openai.com/v1".freeze
 
         def available_parameters(model: nil)
-          {
-            temperature: Parameters::Definition.new(
-              name: :temperature,
-              type: :float,
-              description: "Controls randomness in the output",
-              default: 0.7,
-              constraints: { min: 0.0, max: 2.0 }
-            ),
-            max_tokens: Parameters::Definition.new(
-              name: :max_tokens,
-              type: :integer,
-              description: "Maximum number of tokens to generate",
-              default: 1000,
-              constraints: { min: 1, max: 4096 }
-            ),
-            top_p: Parameters::Definition.new(
-              name: :top_p,
-              type: :float,
-              description: "Controls diversity via nucleus sampling",
-              default: 1.0,
-              constraints: { min: 0.0, max: 1.0 }
-            ),
-            presence_penalty: Parameters::Definition.new(
-              name: :presence_penalty,
-              type: :float,
-              description: "Penalty for new tokens based on presence in text",
-              default: 0.0,
-              constraints: { min: -2.0, max: 2.0 }
-            ),
-            frequency_penalty: Parameters::Definition.new(
-              name: :frequency_penalty,
-              type: :float,
-              description: "Penalty for new tokens based on frequency in text",
-              default: 0.0,
-              constraints: { min: -2.0, max: 2.0 }
+            super.merge(
+                presence_penalty: Parameters::Definition.new(
+                    name: :presence_penalty,
+                    type: :float,
+                    description: "Penalty for new tokens based on presence in text",
+                    default: 0.0,
+                    constraints: { min: -2.0, max: 2.0 }
+                ),
+                frequency_penalty: Parameters::Definition.new(
+                    name: :frequency_penalty,
+                    type: :float,
+                    description: "Penalty for new tokens based on frequency in text",
+                    default: 0.0,
+                    constraints: { min: -2.0, max: 2.0 }
+                )
             )
-          }
         end
-
+    
         def available_models
           response = HTTP
             .headers(accept: "application/json")
