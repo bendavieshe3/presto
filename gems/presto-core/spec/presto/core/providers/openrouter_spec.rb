@@ -38,7 +38,7 @@ RSpec.describe Presto::Core::Providers::OpenRouter do
     end
   end
 
-  describe '#generate_text' do
+  describe '#generate' do
     let(:prompt) { 'Hello world' }
     let(:model) { 'meta-llama/llama-3-8b-instruct' }
     let(:success_response) do
@@ -50,16 +50,15 @@ RSpec.describe Presto::Core::Providers::OpenRouter do
     end
 
     it 'passes through OpenRouter response format' do
-      # Stub the models request
       stub_request(:get, "#{described_class::API_BASE}/models")
         .with(headers: { 'Authorization' => "Bearer #{api_key}" })
-        .to_return(status: 200, body: { 'data' => [{ 'id' => model }] }.to_json)
-
-      # Stub the generation request
+        .to_return(status: 200, body: {
+          'data' => [{ 'id' => model }]
+        }.to_json)      
       stub_request(:post, "#{described_class::API_BASE}/chat/completions")
         .to_return(status: 200, body: success_response)
 
-      response = provider.generate_text(prompt, model: model)
+      response = provider.generate(model: model, text_prompt: prompt)
       expect(response).to eq(JSON.parse(success_response))
     end
   end

@@ -1,4 +1,5 @@
-# spec/integration/text_generation_spec.rb
+# frozen_string_literal: true
+# FILE: gems/presto-core/spec/integration/text_generation_spec.rb
 require 'spec_helper'
 
 RSpec.describe "Text Generation Integration" do
@@ -14,7 +15,7 @@ RSpec.describe "Text Generation Integration" do
         .and_return([{"id" => "test-model"}])
       
       expect {
-        client.generate_text(prompt, model: "test-model", temperature: 3.0)
+        client.generate(model: "test-model", text_prompt: prompt, temperature: 3.0)
       }.to raise_error(Presto::Core::InvalidParameterError, /temperature/)
     end
 
@@ -32,7 +33,7 @@ RSpec.describe "Text Generation Integration" do
         .and_return([])
       
       expect {
-        client.generate_text(prompt, model: "non-existent-model")
+        client.generate(model: "non-existent-model", text_prompt: prompt)
       }.to raise_error(Presto::Core::InvalidModelError)
     end
   end

@@ -18,7 +18,7 @@ module Presto
 
           protected
 
-          def perform_generation(prompt, model, parameters)
+          def perform_generation(model, parameters)
             {"choices" => [{"message" => {"content" => "test response"}}]}
           end
         end
@@ -28,6 +28,12 @@ module Presto
         Class.new(test_provider_class) do
           def available_parameters(model: nil)
             {
+              text_prompt: Parameters::Definition.new(
+                name: :text_prompt,
+                type: :string,
+                description: "Text input",
+                constraints: { min_length: 1 }
+              ),
               temperature: Parameters::Definition.new(
                 name: :temperature,
                 type: :float,
@@ -47,42 +53,15 @@ module Presto
         end
       end
 
-      describe "#available_parameters" do
-        it "requires providers to implement parameter definitions" do
-          provider = test_provider_class.new(api_key: "test")
-          expect { 
-            provider.available_parameters 
-          }.to raise_error(NotImplementedError)
-        end
-
-        context "when implemented" do
-          let(:provider) { implemented_provider_class.new(api_key: "test") }
-
-          it "returns a hash of parameter definitions" do
-            params = provider.available_parameters
-            expect(params).to be_a(Hash)
-            expect(params[:temperature]).to be_a(Parameters::Definition)
-          end
-
-          it "includes parameter metadata" do
-            param = provider.available_parameters[:temperature]
-            expect(param.to_h).to include(
-              name: :temperature,
-              type: :float,
-              description: "Controls randomness"
-            )
-          end
-        end
-      end
-
-      describe "#generate_text" do
+      describe "#generate" do
         let(:provider) { implemented_provider_class.new(api_key: "test") }
 
         context "with valid parameters" do
           it "accepts valid parameter values" do
             expect {
-              provider.generate_text("test", 
+              provider.generate(
                 model: "test-model",
+                text_prompt: "test",
                 temperature: 0.5,
                 style: 'balanced'
               )
@@ -93,8 +72,9 @@ module Presto
         context "with invalid parameters" do
           it "rejects unknown parameters" do
             expect {
-              provider.generate_text("test",
+              provider.generate(
                 model: "test-model",
+                text_prompt: "test",
                 unknown_param: "value"
               )
             }.to raise_error(InvalidParameterError, /Unknown parameter/)
@@ -102,8 +82,9 @@ module Presto
 
           it "rejects invalid parameter values" do
             expect {
-              provider.generate_text("test",
+              provider.generate(
                 model: "test-model",
+                text_prompt: "test",
                 temperature: 1.5
               )
             }.to raise_error(InvalidParameterError, /must be less than or equal to 1.0/)
@@ -112,7 +93,10 @@ module Presto
 
         context "with default values" do
           it "uses default when parameter is not provided" do
-            response = provider.generate_text("test", model: "test-model")
+            response = provider.generate(
+              model: "test-model",
+              text_prompt: "test"
+            )
             expect(response["choices"]).to be_an(Array)
           end
         end

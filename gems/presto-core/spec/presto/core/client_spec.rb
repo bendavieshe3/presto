@@ -35,15 +35,23 @@ RSpec.describe Presto::Core::Client do
     end
   end
 
-  describe '#generate_text' do
+  describe '#generate' do
     let(:client) { described_class.new(provider: :openrouter, api_key: api_key) }
-    let(:prompt) { 'test prompt' }
+    let(:text_prompt) { 'test prompt' }
     let(:model) { 'test-model' }
 
     it 'delegates to the provider with correct parameters' do
-      expect(client.provider).to receive(:generate_text)
-        .with(prompt, model: model)
-      client.generate_text(prompt, model: model)
+      expect(client.provider).to receive(:generate)
+        .with(model: model, text_prompt: text_prompt)
+      client.generate(model: model, text_prompt: text_prompt)
+    end
+
+    it 'uses default model when none specified' do
+      default_model = 'default-model'
+      expect(client.provider).to receive(:default_model).and_return(default_model)
+      expect(client.provider).to receive(:generate)
+        .with(model: default_model, text_prompt: text_prompt)
+      client.generate(text_prompt: text_prompt)
     end
   end
 end

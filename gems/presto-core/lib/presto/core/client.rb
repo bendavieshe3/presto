@@ -14,9 +14,11 @@ module Presto
       def self.available_providers
         AVAILABLE_PROVIDERS.map(&:to_s)
       end
-      def generate_text(prompt, model: "meta-llama/llama-3-8b-instruct", **options)
-        provider.generate_text(prompt, model: model, **options)
-      end
+
+      def generate(model: nil, **parameters)
+        model ||= provider.default_model
+        provider.generate(model: model, **parameters)
+      end      
 
       def available_models
         provider.available_models

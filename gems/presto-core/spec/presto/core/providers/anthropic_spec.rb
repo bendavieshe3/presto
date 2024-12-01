@@ -29,7 +29,7 @@ RSpec.describe Presto::Core::Providers::Anthropic do
     end
   end
 
-  describe '#generate_text' do 
+  describe '#generate' do
     let(:prompt) { 'Hello world' }
     let(:model) { 'claude-3-5-sonnet-20241022' }
     let(:anthropic_response) do
@@ -39,24 +39,22 @@ RSpec.describe Presto::Core::Providers::Anthropic do
       }.to_json
     end
 
-    # Keep provider-specific API test
     it 'transforms Anthropic response format correctly' do 
       stub_request(:post, "#{described_class::API_BASE}/messages")
         .to_return(status: 200, body: anthropic_response)
 
-      response = provider.generate_text(prompt, model: model)
+      response = provider.generate(model: model, text_prompt: prompt)
       expect(response['choices'].first['message']['content']).to eq('Response text')
       expect(response['usage']).to include('prompt_tokens', 'completion_tokens')
     end
 
-    # Keep provider-specific error handling
     context 'with error responses' do
       it 'handles Anthropic-specific errors' do
         stub_request(:post, "#{described_class::API_BASE}/messages")
           .to_return(status: 400, body: { type: 'invalid_request_error', message: 'Context length exceeded' }.to_json)
 
         expect { 
-          provider.generate_text(prompt, model: model)
+          provider.generate(model: model, text_prompt: prompt)
         }.to raise_error(Presto::Core::ApiError, /Context length exceeded/)
       end
     end

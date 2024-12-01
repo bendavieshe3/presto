@@ -53,7 +53,7 @@ RSpec.describe Presto::Core::Providers::OpenAI do
     end
   end
 
-  describe '#generate_text' do
+  describe '#generate' do
     let(:prompt) { 'Hello world' }
     let(:model) { 'gpt-3.5-turbo' }
     let(:openai_response) do
@@ -69,16 +69,15 @@ RSpec.describe Presto::Core::Providers::OpenAI do
     end
 
     it 'transforms OpenAI response format correctly' do
-      # Stub the models request
       stub_request(:get, "#{described_class::API_BASE}/models")
         .with(headers: { 'Authorization' => "Bearer #{api_key}" })
-        .to_return(status: 200, body: { 'data' => [{ 'id' => model }] }.to_json)
-
-      # Stub the generation request
+        .to_return(status: 200, body: {
+          'data' => [{ 'id' => model }]
+        }.to_json)      
       stub_request(:post, "#{described_class::API_BASE}/chat/completions")
         .to_return(status: 200, body: openai_response)
 
-      response = provider.generate_text(prompt, model: model)
+      response = provider.generate(model: model, text_prompt: prompt)
       expect(response['choices'].first['message']['content']).to eq('Response text')
       expect(response['usage']).to include('prompt_tokens', 'completion_tokens', 'total_tokens')
     end

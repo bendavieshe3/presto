@@ -39,7 +39,7 @@ module Presto
 
         protected
 
-        def perform_generation(prompt, model, parameters)
+        def perform_generation(model, parameters)
           response = HTTP
             .headers(accept: "application/json")
             .auth("Bearer #{api_key}")
@@ -47,7 +47,7 @@ module Presto
               "#{API_BASE}/chat/completions",
               json: {
                 model: model,
-                messages: [{ role: "user", content: prompt }],
+                messages: [{ role: "user", content: parameters[:text_prompt] }],
                 **parameters
               }
             )
@@ -56,7 +56,7 @@ module Presto
         rescue HTTP::Error => e
           raise ApiError, "API request failed: #{e.message}"
         end
-
+        
         private
 
         def handle_response(response)

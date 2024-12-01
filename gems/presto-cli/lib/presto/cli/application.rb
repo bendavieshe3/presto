@@ -47,24 +47,25 @@ module Presto
         provider_name = determine_provider
         validate_provider!(provider_name)
         validate_provider_config!(provider_name)
-
+      
         client = create_client(provider_name)
         
-        # Get the default model from the provider if none specified - moved up
+        # Get the default model from the provider if none specified
         model = options[:model] || client.provider.default_model
-
+      
         if options[:verbose]
           say "Using provider: #{provider_name}"
           say "Using model: #{model}"
           say 'Generating response...'
         end
-
+      
         begin
-          response = client.generate_text(
-            prompt,
-            model: model
+          # Use new parameter system with text_prompt
+          response = client.generate(
+            model: model,
+            text_prompt: prompt
           )
-
+      
           if response['choices'] && !response['choices'].empty?
             content = response.dig('choices', 0, 'message', 'content')
             case options[:format]

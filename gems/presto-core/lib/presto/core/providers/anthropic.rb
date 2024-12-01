@@ -65,7 +65,7 @@ module Presto
 
         protected
 
-        def perform_generation(prompt, model, parameters)
+        def perform_generation(model, parameters)
           headers = default_headers
           
           response = HTTP
@@ -74,9 +74,9 @@ module Presto
               "#{API_BASE}/messages",
               json: {
                 model: model,
-                messages: [{ role: "user", content: prompt }],
-                max_tokens: parameters.fetch(:max_tokens, 1024),  # Ensure max_tokens is always present
-                **sanitize_parameters(parameters.reject { |k,_| k == :max_tokens })  # Remove max_tokens from sanitized params since we handle it explicitly
+                messages: [{ role: "user", content: parameters[:text_prompt] }],
+                max_tokens: parameters.fetch(:max_tokens, 1024),
+                **sanitize_parameters(parameters.reject { |k,_| k == :max_tokens })
               }
             )
 

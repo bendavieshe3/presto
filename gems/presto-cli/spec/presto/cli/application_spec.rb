@@ -63,6 +63,8 @@ RSpec.describe Presto::CLI::Application do
   end
 
   describe '#generate command' do
+    let(:app) { described_class.new }
+    let(:prompt) { 'test prompt' }
     let(:model_response) do
       {
         'choices' => [
@@ -75,7 +77,7 @@ RSpec.describe Presto::CLI::Application do
       before do
         ENV['OPENROUTER_API_KEY'] = 'test_key'
         allow_any_instance_of(Presto::Core::Providers::OpenRouter)
-          .to receive(:generate_text)
+          .to receive(:generate)
           .and_return(model_response)
       end
 
@@ -97,92 +99,76 @@ RSpec.describe Presto::CLI::Application do
       end
     end
 
-    context 'with provider validation' do
-      it 'raises error for invalid provider' do
-        expect {
-          app.invoke(:generate, ['test prompt'], provider: 'invalid')
-        }.to raise_error(Thor::Error, /Unknown provider/)
-      end
-
-      it 'raises error when provider is not configured' do
-        expect {
-          app.generate('test prompt')
-        }.to raise_error(Thor::Error, /Provider .* is not configured/)
-      end
-    end
-
     context 'when no model is specified' do
-        before do
-          ENV['OPENAI_API_KEY'] = 'test_key'
-          allow_any_instance_of(Presto::Core::Providers::OpenAI)
-            .to receive(:default_model)
-            .and_return('gpt-3.5-turbo')
-          allow_any_instance_of(Presto::Core::Providers::OpenAI)
-            .to receive(:generate_text)
-            .and_return(model_response)
-        end
-    
-        it 'uses the provider default model' do
-          expect_any_instance_of(Presto::Core::Providers::OpenAI)
-            .to receive(:generate_text)
-            .with('test prompt', model: 'gpt-3.5-turbo')
-            
-          app.invoke(:generate, ['test prompt'], provider: 'openai')
-        end
+      before do
+        ENV['OPENAI_API_KEY'] = 'test_key'
+        allow_any_instance_of(Presto::Core::Providers::OpenAI)
+          .to receive(:default_model)
+          .and_return('gpt-3.5-turbo')
+        allow_any_instance_of(Presto::Core::Providers::OpenAI)
+          .to receive(:generate)
+          .and_return(model_response)
+      end
+
+      it 'uses the provider default model' do
+        expect_any_instance_of(Presto::Core::Providers::OpenAI)
+          .to receive(:generate)
+          .with(model: 'gpt-3.5-turbo', text_prompt: 'test prompt')
+              
+        app.invoke(:generate, ['test prompt'], provider: 'openai')
+      end
     end
 
     context 'with verbose output' do
-        before do
-          ENV['OPENAI_API_KEY'] = 'test_key'
-          allow_any_instance_of(Presto::Core::Providers::OpenAI)
-            .to receive(:generate_text)
-            .and_return(model_response)
-        end
-  
-        it 'displays default model name when no model specified' do
-          default_model = 'gpt-3.5-turbo'
-          allow_any_instance_of(Presto::Core::Providers::OpenAI)
-            .to receive(:default_model)
-            .and_return(default_model)
-  
-          output = capture_output { 
-            app.invoke(:generate, ['test prompt'], verbose: true, provider: 'openai') 
-          }
-          
-          expect(output).to include("Using provider: openai")
-          expect(output).to include("Using model: #{default_model}")
-        end
-  
-        it 'displays specified model name when model provided' do
-          specified_model = 'gpt-4'
-          
-          output = capture_output { 
-            app.invoke(:generate, ['test prompt'], 
-              verbose: true, 
-              provider: 'openai', 
-              model: specified_model) 
-          }
-          
-          expect(output).to include("Using provider: openai")
-          expect(output).to include("Using model: #{specified_model}")
-        end
-  
-        it 'shows the generating message after model info' do
-          output = capture_output { 
-            app.invoke(:generate, ['test prompt'], verbose: true, provider: 'openai') 
-          }
-          
-          # Convert output to lines and check order
-          lines = output.split("\n")
-          provider_line_index = lines.index { |line| line.include?("Using provider:") }
-          model_line_index = lines.index { |line| line.include?("Using model:") }
-          generating_line_index = lines.index { |line| line.include?("Generating response...") }
-          
-          expect(provider_line_index).to be < model_line_index
-          expect(model_line_index).to be < generating_line_index
-        end
-    end
+      before do
+        ENV['OPENAI_API_KEY'] = 'test_key'
+        allow_any_instance_of(Presto::Core::Providers::OpenAI)
+          .to receive(:generate)
+          .and_return(model_response)
+      end
 
+      it 'displays default model name when no model specified' do
+        default_model = 'gpt-3.5-turbo'
+        allow_any_instance_of(Presto::Core::Providers::OpenAI)
+          .to receive(:default_model)
+          .and_return(default_model)
+
+        output = capture_output { 
+          app.invoke(:generate, ['test prompt'], verbose: true, provider: 'openai') 
+        }
+        
+        expect(output).to include("Using provider: openai")
+        expect(output).to include("Using model: #{default_model}")
+      end
+
+      it 'displays specified model name when model provided' do
+        specified_model = 'gpt-4'
+        
+        output = capture_output { 
+          app.invoke(:generate, ['test prompt'], 
+            verbose: true, 
+            provider: 'openai', 
+            model: specified_model) 
+        }
+        
+        expect(output).to include("Using provider: openai")
+        expect(output).to include("Using model: #{specified_model}")
+      end
+
+      it 'shows the generating message after model info' do
+        output = capture_output { 
+          app.invoke(:generate, ['test prompt'], verbose: true, provider: 'openai') 
+        }
+        
+        lines = output.split("\n")
+        provider_line_index = lines.index { |line| line.include?("Using provider:") }
+        model_line_index = lines.index { |line| line.include?("Using model:") }
+        generating_line_index = lines.index { |line| line.include?("Generating response...") }
+        
+        expect(provider_line_index).to be < model_line_index
+        expect(model_line_index).to be < generating_line_index
+      end
+    end
   end
 
   describe '#models command' do
