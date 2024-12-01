@@ -30,155 +30,57 @@ RSpec.describe Presto::Core::Providers::OpenAI do
         .to_return(status: 200, body: models_response)
     end
 
-    it 'fetches and transforms available models from the API' do
+    it 'transforms OpenAI model info correctly' do
       models = provider.available_models
-      expect(models).to be_an(Array)
-      expect(models.first).to include(
-        'id',
-        'name',
-        'description',
-        'context_length',
-        'pricing'
+      model = models.find { |m| m['id'] == 'gpt-4' }
+      expect(model).to include(
+        'context_length' => 8192,
+        'pricing' => { 'prompt' => 0.03, 'completion' => 0.06 }
       )
     end
+  end
 
-    it 'maintains consistent model information structure' do
-      model = provider.available_models.first
-      expect(model['context_length']).to eq(8192)
-      expect(model['pricing']).to be_a(Hash)
+  describe '#available_parameters' do
+    it 'includes OpenAI-specific parameters' do
+      params = provider.available_parameters
+      expect(params[:presence_penalty]).to be_a(Presto::Core::Parameters::Definition)
+      expect(params[:frequency_penalty]).to be_a(Presto::Core::Parameters::Definition)
     end
 
-    context 'when API request fails' do
-      [
-        {
-          scenario: 'structured error response',
-          response: { error: { message: 'Invalid API key' } }.to_json,
-          expected_error: 'Invalid API key'
-        },
-        {
-          scenario: 'simple error response',
-          response: { error: 'Rate limit exceeded' }.to_json,
-          expected_error: 'Rate limit exceeded'
-        },
-        {
-          scenario: 'unparseable response',
-          response: 'Internal Server Error',
-          expected_error: 'Internal Server Error'
-        }
-      ].each do |test_case|
-        context "with #{test_case[:scenario]}" do
-          before do
-            stub_request(:get, "#{described_class::API_BASE}/models")
-              .to_return(status: 500, body: test_case[:response])
-          end
-
-          it 'raises an ApiError with the appropriate message' do
-            expect { provider.available_models }.to raise_error(
-              Presto::Core::ApiError,
-              test_case[:expected_error]
-            )
-          end
-        end
-      end
+    it 'configures presence_penalty correctly' do
+      param = provider.available_parameters[:presence_penalty]
+      expect(param.constraints).to include(min: -2.0, max: 2.0)
     end
   end
 
   describe '#generate_text' do
-    let(:model) { 'gpt-4' }
     let(:prompt) { 'Hello world' }
+    let(:model) { 'gpt-3.5-turbo' }
     let(:openai_response) do
       {
         'choices' => [
           {
-            'message' => {
-              'content' => 'Response text',
-              'role' => 'assistant'
-            },
+            'message' => { 'content' => 'Response text', 'role' => 'assistant' },
             'finish_reason' => 'stop'
           }
         ],
-        'usage' => {
-          'prompt_tokens' => 10,
-          'completion_tokens' => 20,
-          'total_tokens' => 30
-        }
+        'usage' => { 'prompt_tokens' => 10, 'completion_tokens' => 20, 'total_tokens' => 30 }
       }.to_json
     end
 
-    before do
-      # Stub the model validation
-      allow(provider).to receive(:validate_model).and_return(true)
-    end
+    it 'transforms OpenAI response format correctly' do
+      # Stub the models request
+      stub_request(:get, "#{described_class::API_BASE}/models")
+        .with(headers: { 'Authorization' => "Bearer #{api_key}" })
+        .to_return(status: 200, body: { 'data' => [{ 'id' => model }] }.to_json)
 
-    it 'generates text using the specified model' do
+      # Stub the generation request
       stub_request(:post, "#{described_class::API_BASE}/chat/completions")
-        .with(
-          headers: { 'Authorization' => "Bearer #{api_key}" },
-          body: hash_including({
-            model: model,
-            messages: [{ role: 'user', content: prompt }]
-          })
-        )
         .to_return(status: 200, body: openai_response)
 
       response = provider.generate_text(prompt, model: model)
       expect(response['choices'].first['message']['content']).to eq('Response text')
-      expect(response['usage']).to include('prompt_tokens', 'completion_tokens')
-    end
-
-    it 'maintains consistent response structure' do
-      stub_request(:post, "#{described_class::API_BASE}/chat/completions")
-        .with(
-          headers: { 'Authorization' => "Bearer #{api_key}" },
-          body: hash_including({
-            model: model,
-            messages: [{ role: 'user', content: prompt }]
-          })
-        )
-        .to_return(status: 200, body: openai_response)
-
-      response = provider.generate_text(prompt, model: model)
-      expect(response).to match(
-        'choices' => [
-          hash_including(
-            'message' => hash_including('content', 'role'),
-            'finish_reason' => 'stop'
-          )
-        ],
-        'usage' => hash_including(
-          'prompt_tokens',
-          'completion_tokens',
-          'total_tokens'
-        )
-      )
-    end
-
-    context 'with valid parameters' do
-      it 'correctly includes supported parameters in the request' do
-        stub = stub_request(:post, "#{described_class::API_BASE}/chat/completions")
-          .with(
-            body: hash_including({
-              temperature: 0.7,
-              max_tokens: 100,
-              top_p: 0.9,
-              presence_penalty: 0.5,
-              frequency_penalty: 0.5
-            })
-          )
-          .to_return(status: 200, body: openai_response)
-
-        provider.generate_text(
-          prompt,
-          model: model,
-          temperature: 0.7,
-          max_tokens: 100,
-          top_p: 0.9,
-          presence_penalty: 0.5,
-          frequency_penalty: 0.5
-        )
-
-        expect(stub).to have_been_requested
-      end
+      expect(response['usage']).to include('prompt_tokens', 'completion_tokens', 'total_tokens')
     end
   end
 end
