@@ -129,28 +129,25 @@ models.each do |model|
 end
 ```
 
-## Project Structure
+# Project Structure
+
+The project is organized into several key components:
 
 ```
 presto/
-├── gems/
-│   ├── presto-core/           # Core invocation library
-│   │   ├── lib/
-│   │   │   └── presto/
-│   │   │       └── core/
-│   │   │           └── providers/
-│   │   │               ├── base.rb
-│   │   │               ├── openai.rb
-│   │   │               └── openrouter.rb
-│   │   └── spec/
-│   └── presto-cli/            # Command line interface
-│       ├── exe/
-│       ├── lib/
-│       └── spec/
-├── examples/                  # Usage examples
-│   └── basic/
-│       └── text_generation.rb
+├── core/                  # Core library functionality
+│   ├── client/           # Client interface
+│   ├── providers/        # Provider implementations
+│   ├── parameters/       # Parameter handling system
+│   └── config/          # Configuration management
+├── cli/                  # Command-line interface
+└── docs/                # Documentation
+    ├── about.md         # Project overview and goals
+    └── architecture.md  # Technical design and decisions
 ```
+
+For a high-level overview of Presto's goals and philosophy, see [About](docs/about.md).
+For detailed information about internal architecture and design decisions, see [Architecture](docs/architecture.md).
 
 ## Development
 
