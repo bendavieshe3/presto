@@ -4,6 +4,7 @@
 require_relative "core/version"
 require_relative "core/errors"
 require_relative "core/providers/base"
+require_relative "core/providers/text_provider"
 require_relative "core/providers/openrouter"
 require_relative "core/providers/openai"
 require_relative "core/providers/anthropic"
