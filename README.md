@@ -2,6 +2,8 @@
 
 Presto is a command line tool and Ruby library for invoking artificial intelligence models. It provides a unified interface for working with various AI providers and models.
 
+This is the README for the monorepo. For a high-level overview of Presto's goals and philosophy, see [About](docs/about.md). For detailed information about internal architecture and design decisions, see [Architecture](docs/architecture.md).
+
 ## Features
 
 - Simple interface for text generation using AI models
