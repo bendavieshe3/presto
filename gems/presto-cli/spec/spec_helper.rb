@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 require "fileutils"
 require "tmpdir"
+require_relative "presto/cli/helpers/output_helper"
+require_relative "presto/cli/helpers/test_setup_helper"
 
 # Set up test environment before loading any app code
 ENV['PRESTO_CONFIG_PATH'] = Dir.mktmpdir('presto-test-')

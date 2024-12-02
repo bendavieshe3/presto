@@ -90,6 +90,10 @@ module Presto
                    aliases: '-f',
                    desc: 'Output format (text, json)',
                    default: 'text'
+      method_option :search,
+                   aliases: '-s',
+                   desc: 'Search term to filter models',
+                   type: :string
       def models
         provider_name = determine_provider
         validate_provider!(provider_name)
@@ -100,16 +104,23 @@ module Presto
         begin
           models = client.available_models
 
+          # Apply search filter if search term provided
+          models = filter_models(models, options[:search]) if options[:search]
+
           case options[:format]
           when 'json'
             puts JSON.pretty_generate(models)
           else
             say "Available models for #{provider_name}:"
-            models.each do |model|
-              if options[:verbose]
-                display_verbose_model_info(model)
-              else
-                display_basic_model_info(model)
+            if models.empty?
+              say "  No models found matching '#{options[:search]}'" if options[:search]
+            else
+              models.each do |model|
+                if options[:verbose]
+                  display_verbose_model_info(model)
+                else
+                  display_basic_model_info(model)
+                end
               end
             end
           end
@@ -222,6 +233,20 @@ module Presto
         end
         
         say "" # Empty line for readability between models
+      end
+
+      def filter_models(models, search_term)
+        return models unless search_term
+        
+        models.select do |model|
+          searchable_fields = [
+            model['id'],
+            model['name'],
+            model['description']
+          ].compact.map(&:downcase)
+          
+          searchable_fields.any? { |field| field.include?(search_term.downcase) }
+        end
       end
 
       def handle_error(response)
